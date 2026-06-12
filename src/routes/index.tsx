@@ -38,8 +38,8 @@ function Index() {
         </p>
       </section>
 
-      <section className="bg-white border border-[#dfe3e8] rounded-sm">
-        <div className="px-5 py-4 border-b border-[#dfe3e8] bg-[#fafbfc] flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+      <section>
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between mb-5">
           <div className="flex items-center gap-4 text-xs text-[#5b6573]">
             <span><strong className="text-[#1f2937]">{centrosCusto.length}</strong> centros</span>
             <span className="text-[#dfe3e8]">|</span>
@@ -61,47 +61,47 @@ function Index() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wider text-[#5b6573] bg-[#fafbfc] border-b border-[#dfe3e8]">
-                <th className="px-5 py-2 font-medium">Código</th>
-                <th className="px-5 py-2 font-medium">Centro de Custo</th>
-                <th className="px-5 py-2 font-medium text-right">Notebooks</th>
-                <th className="px-5 py-2 font-medium text-right">Valor Mensal</th>
-                <th className="px-5 py-2 font-medium text-right">% Total</th>
-                <th className="px-5 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((cc) => (
-                <tr key={cc.codigo} className="border-b border-[#eef0f3] hover:bg-[#f7f9fb]">
-                  <td className="px-5 py-3 font-mono text-[#5b6573]">{cc.codigo}</td>
-                  <td className="px-5 py-3 font-medium text-[#1f2937]">{cc.nome}</td>
-                  <td className="px-5 py-3 text-right tabular-nums">{cc.notebooks.length}</td>
-                  <td className="px-5 py-3 text-right tabular-nums">{formatBRL(totalCC(cc))}</td>
-                  <td className="px-5 py-3 text-right tabular-nums">{percentualCC(cc).toFixed(2)}%</td>
-                  <td className="px-5 py-3 text-right">
-                    <Link
-                      to="/centro/$codigo"
-                      params={{ codigo: cc.codigo }}
-                      className="text-[#1d3557] hover:underline text-xs font-medium"
-                    >
-                      Detalhes →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {filtrados.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-[#5b6573]">
-                    Nenhum centro de custo encontrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtrados.map((cc) => (
+            <Link
+              key={cc.codigo}
+              to="/centro/$codigo"
+              params={{ codigo: cc.codigo }}
+              className="group block bg-white border border-[#dfe3e8] rounded-sm p-5 hover:border-[#1d3557] hover:shadow-[0_4px_12px_rgba(29,53,87,0.08)] transition-all duration-200"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="text-[11px] font-mono text-[#5b6573] mb-1">{cc.codigo}</div>
+                  <h3 className="text-[15px] font-semibold text-[#1d3557] leading-snug group-hover:text-[#1d3557]">
+                    {cc.nome}
+                  </h3>
+                </div>
+                <span className="text-[#1d3557] text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">→</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#eef0f3]">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">Notebooks</div>
+                  <div className="text-lg font-semibold text-[#1f2937] tabular-nums">{cc.notebooks.length}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">Mensal</div>
+                  <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{formatBRL(totalCC(cc))}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">% Total</div>
+                  <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{percentualCC(cc).toFixed(2)}%</div>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
+
+        {filtrados.length === 0 && (
+          <div className="py-12 text-center text-sm text-[#5b6573] bg-white border border-[#dfe3e8] rounded-sm">
+            Nenhum centro de custo encontrado.
+          </div>
+        )}
       </section>
     </PortalLayout>
   );
