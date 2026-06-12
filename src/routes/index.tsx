@@ -94,7 +94,7 @@ function Index() {
                 </div>
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">% Total</div>
-                  <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{percentualCC(cc).toFixed(2)}%</div>
+                  <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{percentualCC(cc, centrosCusto).toFixed(2)}%</div>
                 </div>
               </div>
             </Link>
