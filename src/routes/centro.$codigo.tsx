@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PortalLayout } from "@/components/PortalLayout";
 import { getCentro, totalCC, percentualCC, formatBRL } from "@/lib/rateio-data";
@@ -7,11 +7,6 @@ export const Route = createFileRoute("/centro/$codigo")({
   head: ({ params }) => ({
     meta: [{ title: `Centro ${params.codigo} · Central de Rateio` }],
   }),
-  loader: ({ params }) => {
-    const cc = getCentro(params.codigo);
-    if (!cc) throw notFound();
-    return { cc };
-  },
   component: Detalhes,
   notFoundComponent: () => (
     <PortalLayout>
@@ -24,7 +19,18 @@ export const Route = createFileRoute("/centro/$codigo")({
 });
 
 function Detalhes() {
-  const { cc } = Route.useLoaderData();
+  const { codigo } = Route.useParams();
+  const cc = getCentro(codigo);
+  if (!cc) {
+    return (
+      <PortalLayout>
+        <div className="bg-white border border-[#dfe3e8] p-8 text-center">
+          <p className="text-sm text-[#5b6573]">Centro de custo não encontrado.</p>
+          <Link to="/" className="text-[#1d3557] hover:underline text-sm">← Voltar</Link>
+        </div>
+      </PortalLayout>
+    );
+  }
   const [cidade, setCidade] = useState("");
   const [colaborador, setColaborador] = useState("");
   const [busca, setBusca] = useState("");
