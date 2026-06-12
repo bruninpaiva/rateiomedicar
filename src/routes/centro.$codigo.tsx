@@ -93,7 +93,7 @@ function Detalhes() {
       <section className="grid grid-cols-2 sm:grid-cols-4 border border-[#dfe3e8] bg-white mb-6">
         <Resumo label="Notebooks" valor={String(cc.notebooks.length)} />
         <Resumo label="Valor Mensal" valor={formatBRL(totalCC(cc))} />
-        <Resumo label="% do Total" valor={`${percentualCC(cc).toFixed(2)}%`} />
+        <Resumo label="% do Total" valor={`${percentualCC(cc, centros).toFixed(2)}%`} />
         <Resumo label="Código" valor={cc.codigo} mono />
       </section>
 
