@@ -144,14 +144,76 @@ export function getCentro(codigo: string, centros: CentroCusto[]) {
 
 // ---------- Importação de planilha ----------
 
-export interface LinhaPlanilha {
-  N_Serie?: string | number;
-  Valor_Unit?: string | number;
-  Percentual?: string | number;
-  Cod_Centro_Custo?: string | number;
-  Centro_Custo?: string;
-  Cidade?: string;
-  Nome?: string;
+export type CampoMapeavel =
+  | "codigo"
+  | "centro"
+  | "serie"
+  | "nome"
+  | "cidade"
+  | "valor"
+  | "percentual";
+
+export interface MapeamentoColunas {
+  codigo: string | null;
+  centro: string | null;
+  serie: string | null;
+  nome: string | null;
+  cidade: string | null;
+  valor: string | null;
+  percentual: string | null;
+}
+
+export const CAMPOS_MAPEAVEIS: { campo: CampoMapeavel; rotulo: string; obrigatorio: boolean }[] = [
+  { campo: "centro", rotulo: "Centro de Custo (nome)", obrigatorio: true },
+  { campo: "codigo", rotulo: "Código do Centro de Custo", obrigatorio: false },
+  { campo: "serie", rotulo: "Número de Série", obrigatorio: true },
+  { campo: "nome", rotulo: "Nome do Colaborador", obrigatorio: true },
+  { campo: "cidade", rotulo: "Cidade", obrigatorio: false },
+  { campo: "valor", rotulo: "Valor", obrigatorio: true },
+  { campo: "percentual", rotulo: "Percentual", obrigatorio: false },
+];
+
+const ALIASES: Record<CampoMapeavel, string[]> = {
+  codigo: ["cod_centro_custo", "codigo_centro_custo", "cod_cc", "codigo", "cod", "cc"],
+  centro: ["centro_custo", "centrodecusto", "centro", "departamento", "setor", "nome_cc"],
+  serie: ["n_serie", "numero_serie", "numerodeserie", "serie", "serial", "n_de_serie", "nserie"],
+  nome: ["nome", "colaborador", "funcionario", "usuario", "responsavel"],
+  cidade: ["cidade", "city", "localidade", "municipio"],
+  valor: ["valor_unit", "valor_unitario", "valor", "valor_mensal", "preco", "valor_total"],
+  percentual: ["percentual", "percent", "porcentagem", "rateio", "perc"],
+};
+
+function normalizar(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+export function autoDetectarMapeamento(colunas: string[]): MapeamentoColunas {
+  const result: MapeamentoColunas = {
+    codigo: null, centro: null, serie: null, nome: null,
+    cidade: null, valor: null, percentual: null,
+  };
+  const normMap = new Map(colunas.map((c) => [normalizar(c), c]));
+  (Object.keys(ALIASES) as CampoMapeavel[]).forEach((campo) => {
+    for (const alias of ALIASES[campo]) {
+      if (normMap.has(alias)) {
+        result[campo] = normMap.get(alias)!;
+        return;
+      }
+    }
+    // fallback: contém
+    for (const [norm, original] of normMap.entries()) {
+      if (ALIASES[campo].some((a) => norm.includes(a) || a.includes(norm))) {
+        result[campo] = original;
+        return;
+      }
+    }
+  });
+  return result;
 }
 
 function toNumber(v: unknown): number {
@@ -171,24 +233,37 @@ export interface ImportResult {
   totalNotebooks: number;
 }
 
-export function montarCentrosDePlanilha(linhas: LinhaPlanilha[]): ImportResult {
+export function montarCentrosComMapeamento(
+  linhas: Record<string, unknown>[],
+  m: MapeamentoColunas,
+): ImportResult {
   const map = new Map<string, CentroCusto>();
   let totalNotebooks = 0;
 
   for (const linha of linhas) {
-    const codigo = String(linha.Cod_Centro_Custo ?? "").trim();
+    const nomeCentro = m.centro ? String(linha[m.centro] ?? "").trim() : "";
+    const codigoRaw = m.codigo ? String(linha[m.codigo] ?? "").trim() : "";
+    const codigo = codigoRaw || nomeCentro;
     if (!codigo) continue;
-    const nome = String(linha.Centro_Custo ?? "").trim() || `Centro ${codigo}`;
+    const nome = nomeCentro || `Centro ${codigo}`;
     if (!map.has(codigo)) map.set(codigo, { codigo, nome, notebooks: [] });
     const cc = map.get(codigo)!;
     cc.notebooks.push({
-      colaborador: String(linha.Nome ?? "").trim() || "—",
-      serie: String(linha.N_Serie ?? "").trim() || "—",
-      cidade: String(linha.Cidade ?? "").trim() || "—",
-      valorMensal: toNumber(linha.Valor_Unit),
-      percentual: toNumber(linha.Percentual),
+      colaborador: m.nome ? String(linha[m.nome] ?? "").trim() || "—" : "—",
+      serie: m.serie ? String(linha[m.serie] ?? "").trim() || "—" : "—",
+      cidade: m.cidade ? String(linha[m.cidade] ?? "").trim() || "—" : "—",
+      valorMensal: m.valor ? toNumber(linha[m.valor]) : 0,
+      percentual: m.percentual ? toNumber(linha[m.percentual]) : 0,
     });
     totalNotebooks++;
+  }
+
+  // Recalcula percentual se a coluna não foi mapeada
+  if (!m.percentual) {
+    for (const cc of map.values()) {
+      const total = cc.notebooks.reduce((s, n) => s + n.valorMensal, 0);
+      cc.notebooks.forEach((n) => (n.percentual = total > 0 ? (n.valorMensal / total) * 100 : 0));
+    }
   }
 
   const centros = Array.from(map.values()).sort((a, b) => a.codigo.localeCompare(b.codigo));
@@ -199,3 +274,4 @@ export function montarCentrosDePlanilha(linhas: LinhaPlanilha[]): ImportResult {
     totalNotebooks,
   };
 }
+
