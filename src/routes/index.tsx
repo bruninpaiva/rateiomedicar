@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PortalLayout } from "@/components/PortalLayout";
-import { centrosCusto, totalCC, percentualCC, formatBRL } from "@/lib/rateio-data";
+import { ImportarPlanilha } from "@/components/ImportarPlanilha";
+import { useCentros, totalCC, percentualCC, formatBRL } from "@/lib/rateio-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const centrosCusto = useCentros();
   const [busca, setBusca] = useState("");
 
   const filtrados = useMemo(() => {
@@ -22,7 +24,7 @@ function Index() {
     return centrosCusto.filter(
       (c) => c.nome.toLowerCase().includes(q) || c.codigo.includes(q),
     );
-  }, [busca]);
+  }, [busca, centrosCusto]);
 
   const totalNotebooks = centrosCusto.reduce((s, c) => s + c.notebooks.length, 0);
   const totalValor = centrosCusto.reduce((s, c) => s + totalCC(c), 0);
@@ -37,6 +39,8 @@ function Index() {
           Esta tela é exclusivamente de consulta.
         </p>
       </section>
+
+      <ImportarPlanilha />
 
       <section>
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between mb-5">
@@ -90,7 +94,7 @@ function Index() {
                 </div>
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">% Total</div>
-                  <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{percentualCC(cc).toFixed(2)}%</div>
+                  <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{percentualCC(cc, centrosCusto).toFixed(2)}%</div>
                 </div>
               </div>
             </Link>
