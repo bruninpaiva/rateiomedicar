@@ -20,7 +20,8 @@ export const Route = createFileRoute("/centro/$codigo")({
 
 function Detalhes() {
   const { codigo } = Route.useParams();
-  const cc = getCentro(codigo);
+  const centros = useCentros();
+  const cc = getCentro(codigo, centros);
   if (!cc) {
     return (
       <PortalLayout>
