@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PortalLayout } from "@/components/PortalLayout";
-import { ImportarPlanilha } from "@/components/ImportarPlanilha";
 import { useCentros, totalCC, percentualCC, formatBRL } from "@/lib/rateio-data";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
