@@ -40,7 +40,7 @@ function Index() {
         </p>
       </section>
 
-      <ImportarPlanilha />
+
 
       <section>
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between mb-5">
