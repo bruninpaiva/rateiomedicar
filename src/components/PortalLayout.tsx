@@ -33,9 +33,13 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
       <footer className="border-t border-[#dfe3e8] bg-white mt-12">
         <div className="max-w-6xl mx-auto px-6 py-4 text-xs text-[#5b6573] flex flex-col sm:flex-row sm:justify-between gap-1">
           <span>© {new Date().getFullYear()} Departamento de Tecnologia da Informação</span>
-          <span>Portal somente leitura · Aprovações realizadas no TOTVS</span>
+          <span className="flex items-center gap-3">
+            <span>Portal somente leitura · Aprovações realizadas no TOTVS</span>
+            <Link to="/admin" className="text-[#9aa3ad] hover:text-[#1d3557] hover:underline">Administração</Link>
+          </span>
         </div>
       </footer>
+
     </div>
   );
 }

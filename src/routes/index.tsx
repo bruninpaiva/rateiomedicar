@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PortalLayout } from "@/components/PortalLayout";
-import { ImportarPlanilha } from "@/components/ImportarPlanilha";
 import { useCentros, totalCC, percentualCC, formatBRL } from "@/lib/rateio-data";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,7 +40,7 @@ function Index() {
         </p>
       </section>
 
-      <ImportarPlanilha />
+
 
       <section>
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between mb-5">
