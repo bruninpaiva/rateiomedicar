@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PortalLayout } from "@/components/PortalLayout";
-import { ImportarPlanilha } from "@/components/ImportarPlanilha";
-import { useCentros, totalCC, formatBRL } from "@/lib/rateio-data";
+import { useRateioData, refresh, totalCC, formatBRL, formatDataHora } from "@/lib/rateio-data";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -85,8 +84,18 @@ function TelaLogin({ onSucesso }: { onSucesso: () => void }) {
   );
 }
 
+const ROTULOS_CAMPO: Record<string, string> = {
+  codigo: "Código do centro",
+  centro: "Centro de custo (nome)",
+  serie: "Número de série",
+  nome: "Colaborador",
+  cidade: "Cidade",
+  valor: "Valor mensal",
+  percentual: "Percentual",
+};
+
 function PainelAdmin({ onSair }: { onSair: () => void }) {
-  const centros = useCentros();
+  const { status, centros, meta, error } = useRateioData();
   const totalNotebooks = centros.reduce((s, c) => s + c.notebooks.length, 0);
   const totalValor = centros.reduce((s, c) => s + totalCC(c), 0);
 
@@ -105,8 +114,8 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
           <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1">Área restrita</div>
           <h1 className="text-2xl font-semibold text-[#1d3557]">Administração do Portal</h1>
           <p className="text-sm text-[#5b6573] mt-1 max-w-3xl">
-            Gerencie os dados exibidos no portal de consulta. As alterações feitas aqui ficam
-            imediatamente disponíveis para os gestores.
+            Os dados deste portal são lidos diretamente da planilha oficial hospedada no SharePoint
+            corporativo. Não há mais importação manual de arquivos.
           </p>
         </div>
         <button
@@ -117,17 +126,75 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
         </button>
       </section>
 
+      <section className="bg-white border border-[#dfe3e8] rounded-sm mb-6">
+        <div className="px-5 py-4 border-b border-[#dfe3e8] flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-[#5b6573]">Fonte de dados</div>
+            <h2 className="text-base font-semibold text-[#1d3557]">Microsoft 365 — SharePoint</h2>
+          </div>
+          <button
+            onClick={() => refresh()}
+            disabled={status === "loading"}
+            className="text-xs px-3 py-2 bg-[#1d3557] text-white hover:bg-[#15294a] disabled:opacity-60 rounded-sm"
+          >
+            {status === "loading" ? "Sincronizando…" : "Sincronizar agora"}
+          </button>
+        </div>
+
+        <div className="px-5 py-4 text-sm">
+          {status === "loading" && (
+            <p className="text-[#5b6573]">Lendo a planilha no SharePoint…</p>
+          )}
+
+          {status === "error" && error && (
+            <div className="text-sm px-4 py-3 rounded-sm border bg-[#fdf3f3] border-[#f1c9c9] text-[#8a2a2a]">
+              <strong>Falha na sincronização:</strong> {error}
+            </div>
+          )}
+
+          {status === "success" && meta && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-[13px]">
+              <Linha rotulo="Arquivo" valor={meta.arquivo} />
+              <Linha rotulo="Aba lida" valor={meta.sheetName} />
+              <Linha rotulo="Última sincronização" valor={formatDataHora(meta.lastSync)} />
+              <Linha rotulo="Linhas processadas" valor={String(meta.totalLinhas)} />
+              <Linha rotulo="Centros de custo" valor={String(meta.totalCentros)} />
+              <Linha rotulo="Notebooks" valor={String(meta.totalNotebooks)} />
+              <div className="sm:col-span-2 pt-3 mt-2 border-t border-[#eef0f3]">
+                <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1.5">Colunas identificadas</div>
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {meta.colunasIdentificadas.map((c) => (
+                    <span key={c} className="text-[11px] font-mono bg-[#f4f5f7] border border-[#dfe3e8] px-2 py-0.5 rounded-sm text-[#1f2937]">{c}</span>
+                  ))}
+                </div>
+                <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1.5">Mapeamento aplicado</div>
+                <table className="text-[12px] w-full sm:w-auto">
+                  <tbody>
+                    {(Object.keys(ROTULOS_CAMPO) as (keyof typeof meta.mapeamento)[]).map((k) => (
+                      <tr key={k}>
+                        <td className="text-[#5b6573] pr-4 py-0.5">{ROTULOS_CAMPO[k]}</td>
+                        <td className="font-mono text-[#1f2937] py-0.5">
+                          {meta.mapeamento[k] ?? <span className="text-[#a0a8b3] italic">não mapeada</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <CartaoInfo rotulo="Centros de Custo" valor={String(centros.length)} />
-        <CartaoInfo rotulo="Notebooks cadastrados" valor={String(totalNotebooks)} />
+        <CartaoInfo rotulo="Notebooks carregados" valor={String(totalNotebooks)} />
         <CartaoInfo rotulo="Valor mensal total" valor={formatBRL(totalValor)} />
       </div>
 
-      <ImportarPlanilha />
-
       <section className="bg-white border border-[#dfe3e8] rounded-sm">
         <div className="px-5 py-4 border-b border-[#dfe3e8]">
-          <div className="text-[11px] uppercase tracking-wider text-[#5b6573]">Resumo da base atual</div>
+          <div className="text-[11px] uppercase tracking-wider text-[#5b6573]">Base atual</div>
           <h2 className="text-base font-semibold text-[#1d3557]">Centros de custo carregados</h2>
         </div>
         <div className="overflow-x-auto">
@@ -150,7 +217,9 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
                 </tr>
               ))}
               {centros.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-8 text-center text-[#5b6573]">Nenhum dado carregado.</td></tr>
+                <tr><td colSpan={4} className="px-5 py-8 text-center text-[#5b6573]">
+                  {status === "loading" ? "Carregando dados da planilha…" : "Nenhum dado disponível."}
+                </td></tr>
               )}
             </tbody>
           </table>
@@ -165,6 +234,15 @@ function CartaoInfo({ rotulo, valor }: { rotulo: string; valor: string }) {
     <div className="bg-white border border-[#dfe3e8] rounded-sm p-4">
       <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1">{rotulo}</div>
       <div className="text-xl font-semibold text-[#1d3557] tabular-nums">{valor}</div>
+    </div>
+  );
+}
+
+function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-[#f1f3f5] py-1">
+      <span className="text-[11px] uppercase tracking-wider text-[#5b6573]">{rotulo}</span>
+      <span className="text-[#1f2937] font-medium text-right">{valor}</span>
     </div>
   );
 }
