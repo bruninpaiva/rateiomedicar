@@ -1,4 +1,7 @@
 import { useSyncExternalStore } from "react";
+import { getRateioData } from "./rateio.functions";
+
+// ---------- Tipos ----------
 
 export interface Notebook {
   colaborador: string;
@@ -13,136 +16,6 @@ export interface CentroCusto {
   nome: string;
   notebooks: Notebook[];
 }
-
-// ---------- Seed (dados fictícios para demonstração) ----------
-
-const cidades = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Porto Alegre", "Recife", "Salvador", "Brasília"];
-const nomes = [
-  "Ana Carolina Silva", "Bruno Almeida Costa", "Carla Mendes Ferreira", "Daniel Rocha Lima",
-  "Eduarda Pereira Souza", "Fernando Oliveira Dias", "Gabriela Martins Pinto", "Henrique Barbosa Cruz",
-  "Isabela Cardoso Nunes", "João Pedro Ribeiro", "Karina Azevedo Melo", "Lucas Vieira Campos",
-  "Mariana Teixeira Reis", "Nathan Cordeiro Pires", "Olivia Ramos Freitas", "Paulo Henrique Moraes",
-  "Quésia Sant'Anna", "Rafael Monteiro Castro", "Sabrina Lopes Andrade", "Thiago Nogueira Pinto",
-  "Ursula Bittencourt", "Vinícius Carvalho Brito", "Wesley Tavares Galvão", "Xavier Quintana",
-  "Yasmin Duarte Fonseca", "Zeca Pagodinho Júnior", "Amanda Borges Siqueira", "Beatriz Antunes",
-  "Caio Fernandes Macedo", "Diana Prado Vasconcelos",
-];
-
-const centrosBase = [
-  { codigo: "1010", nome: "Diretoria Executiva" },
-  { codigo: "2020", nome: "Tecnologia da Informação" },
-  { codigo: "3030", nome: "Recursos Humanos" },
-  { codigo: "4040", nome: "Financeiro e Contábil" },
-  { codigo: "5050", nome: "Comercial - Vendas" },
-  { codigo: "6060", nome: "Marketing e Comunicação" },
-  { codigo: "7070", nome: "Operações e Logística" },
-  { codigo: "8080", nome: "Jurídico e Compliance" },
-  { codigo: "9090", nome: "Pesquisa e Desenvolvimento" },
-  { codigo: "1111", nome: "Suporte ao Cliente" },
-];
-
-function pick<T>(arr: T[], i: number) {
-  return arr[i % arr.length];
-}
-
-function gerarSeed(): CentroCusto[] {
-  let nomeIdx = 0;
-  let serieIdx = 0;
-  return centrosBase.map((cc, idx) => {
-    const qtd = 3 + ((idx * 7) % 6);
-    const notebooks: Notebook[] = [];
-    for (let i = 0; i < qtd; i++) {
-      const valor = 180 + ((idx * 13 + i * 29) % 220);
-      notebooks.push({
-        colaborador: pick(nomes, nomeIdx++),
-        serie: `NB-${String(2024000 + serieIdx++).padStart(7, "0")}`,
-        cidade: pick(cidades, idx + i),
-        valorMensal: valor,
-        percentual: 0,
-      });
-    }
-    const total = notebooks.reduce((s, n) => s + n.valorMensal, 0);
-    notebooks.forEach((n) => (n.percentual = (n.valorMensal / total) * 100));
-    return { ...cc, notebooks };
-  });
-}
-
-// ---------- Store reativo (com persistência local) ----------
-
-const STORAGE_KEY = "rateio:centros";
-
-function loadInitial(): CentroCusto[] {
-  if (typeof window === "undefined") return gerarSeed();
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as CentroCusto[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    /* ignore */
-  }
-  return gerarSeed();
-}
-
-let centrosState: CentroCusto[] = loadInitial();
-const listeners = new Set<() => void>();
-
-function emit() {
-  listeners.forEach((l) => l());
-}
-
-function subscribe(l: () => void) {
-  listeners.add(l);
-  return () => listeners.delete(l);
-}
-
-export function setCentros(next: CentroCusto[]) {
-  centrosState = next;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    /* ignore */
-  }
-  emit();
-}
-
-export function resetCentros() {
-  setCentros(gerarSeed());
-}
-
-export function getCentrosSnapshot() {
-  return centrosState;
-}
-
-export function useCentros(): CentroCusto[] {
-  return useSyncExternalStore(subscribe, getCentrosSnapshot, getCentrosSnapshot);
-}
-
-// ---------- Helpers ----------
-
-export function totalCC(cc: CentroCusto) {
-  return cc.notebooks.reduce((s, n) => s + n.valorMensal, 0);
-}
-
-export function totalGeral(centros: CentroCusto[]) {
-  return centros.reduce((s, cc) => s + totalCC(cc), 0);
-}
-
-export function percentualCC(cc: CentroCusto, centros: CentroCusto[]) {
-  const g = totalGeral(centros);
-  return g === 0 ? 0 : (totalCC(cc) / g) * 100;
-}
-
-export function formatBRL(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-export function getCentro(codigo: string, centros: CentroCusto[]) {
-  return centros.find((c) => c.codigo === codigo);
-}
-
-// ---------- Importação de planilha ----------
 
 export type CampoMapeavel =
   | "codigo"
@@ -163,15 +36,27 @@ export interface MapeamentoColunas {
   percentual: string | null;
 }
 
-export const CAMPOS_MAPEAVEIS: { campo: CampoMapeavel; rotulo: string; obrigatorio: boolean }[] = [
-  { campo: "centro", rotulo: "Centro de Custo (nome)", obrigatorio: true },
-  { campo: "codigo", rotulo: "Código do Centro de Custo", obrigatorio: false },
-  { campo: "serie", rotulo: "Número de Série", obrigatorio: true },
-  { campo: "nome", rotulo: "Nome do Colaborador", obrigatorio: true },
-  { campo: "cidade", rotulo: "Cidade", obrigatorio: false },
-  { campo: "valor", rotulo: "Valor", obrigatorio: true },
-  { campo: "percentual", rotulo: "Percentual", obrigatorio: false },
-];
+export interface RateioMeta {
+  lastSync: string;
+  totalLinhas: number;
+  totalCentros: number;
+  totalNotebooks: number;
+  sheetName: string;
+  colunasIdentificadas: string[];
+  mapeamento: MapeamentoColunas;
+  arquivo: string;
+}
+
+export type RateioStatus = "idle" | "loading" | "success" | "error";
+
+export interface RateioState {
+  status: RateioStatus;
+  centros: CentroCusto[];
+  meta: RateioMeta | null;
+  error: string | null;
+}
+
+// ---------- Helpers de parsing (isomorphic) ----------
 
 const ALIASES: Record<CampoMapeavel, string[]> = {
   codigo: ["cod_centro_custo", "codigo_centro_custo", "cod_cc", "codigo", "cod", "cc"],
@@ -205,7 +90,6 @@ export function autoDetectarMapeamento(colunas: string[]): MapeamentoColunas {
         return;
       }
     }
-    // fallback: contém
     for (const [norm, original] of normMap.entries()) {
       if (ALIASES[campo].some((a) => norm.includes(a) || a.includes(norm))) {
         result[campo] = original;
@@ -245,7 +129,7 @@ export function montarCentrosComMapeamento(
     const codigoRaw = m.codigo ? String(linha[m.codigo] ?? "").trim() : "";
     const codigo = codigoRaw || nomeCentro;
     if (!codigo) continue;
-    const nome = nomeCentro || `Centro ${codigo}`;
+    const nome = nomeCentro || codigoRaw || codigo;
     if (!map.has(codigo)) map.set(codigo, { codigo, nome, notebooks: [] });
     const cc = map.get(codigo)!;
     cc.notebooks.push({
@@ -258,15 +142,22 @@ export function montarCentrosComMapeamento(
     totalNotebooks++;
   }
 
-  // Recalcula percentual se a coluna não foi mapeada
-  if (!m.percentual) {
+  // Se o percentual está em formato decimal (0–1), converte para porcentagem (0–100)
+  if (m.percentual) {
+    const todos = Array.from(map.values()).flatMap((cc) => cc.notebooks);
+    const max = todos.reduce((mx, n) => Math.max(mx, n.percentual), 0);
+    if (max > 0 && max <= 1.5) {
+      todos.forEach((n) => (n.percentual = n.percentual * 100));
+    }
+  } else {
+    // Sem coluna de percentual: recalcula a partir do valor dentro do centro
     for (const cc of map.values()) {
       const total = cc.notebooks.reduce((s, n) => s + n.valorMensal, 0);
       cc.notebooks.forEach((n) => (n.percentual = total > 0 ? (n.valorMensal / total) * 100 : 0));
     }
   }
 
-  const centros = Array.from(map.values()).sort((a, b) => a.codigo.localeCompare(b.codigo));
+  const centros = Array.from(map.values()).sort((a, b) => a.nome.localeCompare(b.nome));
   return {
     centros,
     totalLinhas: linhas.length,
@@ -275,3 +166,81 @@ export function montarCentrosComMapeamento(
   };
 }
 
+// ---------- Store reativa (alimentada APENAS pelo SharePoint) ----------
+
+let state: RateioState = {
+  status: "idle",
+  centros: [],
+  meta: null,
+  error: null,
+};
+let loadingPromise: Promise<void> | null = null;
+
+const listeners = new Set<() => void>();
+function emit() { listeners.forEach((l) => l()); }
+function subscribe(l: () => void) {
+  listeners.add(l);
+  if (state.status === "idle") void refresh();
+  return () => listeners.delete(l);
+}
+function setState(next: Partial<RateioState>) {
+  state = { ...state, ...next };
+  emit();
+}
+
+export async function refresh(): Promise<void> {
+  if (loadingPromise) return loadingPromise;
+  setState({ status: "loading", error: null });
+  loadingPromise = (async () => {
+    try {
+      const res = await getRateioData();
+      if (res.ok) {
+        const { centros, ...meta } = res.payload;
+        setState({ status: "success", centros, meta, error: null });
+      } else {
+        setState({ status: "error", error: res.error, centros: [], meta: null });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setState({ status: "error", error: msg, centros: [], meta: null });
+    } finally {
+      loadingPromise = null;
+    }
+  })();
+  return loadingPromise;
+}
+
+export function useRateioData(): RateioState {
+  return useSyncExternalStore(subscribe, () => state, () => state);
+}
+
+export function useCentros(): CentroCusto[] {
+  return useRateioData().centros;
+}
+
+// ---------- Helpers de exibição ----------
+
+export function totalCC(cc: CentroCusto) {
+  return cc.notebooks.reduce((s, n) => s + n.valorMensal, 0);
+}
+export function totalGeral(centros: CentroCusto[]) {
+  return centros.reduce((s, cc) => s + totalCC(cc), 0);
+}
+export function percentualCC(cc: CentroCusto, centros: CentroCusto[]) {
+  const g = totalGeral(centros);
+  return g === 0 ? 0 : (totalCC(cc) / g) * 100;
+}
+export function formatBRL(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+export function formatDataHora(iso: string) {
+  try {
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return iso; }
+}
+export function getCentro(codigo: string, centros: CentroCusto[]) {
+  return centros.find((c) => c.codigo === codigo);
+}
