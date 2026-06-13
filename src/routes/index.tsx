@@ -119,11 +119,13 @@ function Index() {
   );
 }
 
+type RateioStateView = ReturnType<typeof useRateioData>;
+
 function BannerSincronizacao({
   status,
   meta,
   error,
-}: ReturnType<typeof useRateioData> extends infer S ? S extends { status: infer _S } ? { status: _S; meta: ReturnType<typeof useRateioData>["meta"]; error: string | null } : never : never) {
+}: Pick<RateioStateView, "status" | "meta" | "error">) {
   if (status === "loading" && !meta) {
     return (
       <div className="mb-6 px-4 py-3 bg-white border border-[#dfe3e8] rounded-sm text-sm text-[#5b6573] flex items-center gap-3">
