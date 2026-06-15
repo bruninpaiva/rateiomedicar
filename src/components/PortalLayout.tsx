@@ -4,12 +4,10 @@ import type { ReactNode } from "react";
 export function PortalLayout({ children, breadcrumb }: { children: ReactNode; breadcrumb?: ReactNode }) {
   return (
     <div className="min-h-screen bg-[#f4f5f7] text-[#1f2937] font-sans">
-      <header className="bg-[#1d3557] text-white border-b-4 border-[#e4b03a]">
+      <header className="bg-[#1d3557] text-white">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white text-[#1d3557] flex items-center justify-center font-bold text-sm rounded-sm">
-              TI
-            </div>
+            <img src="/logo-medicar.png" alt="Medicar" className="h-9 w-auto" />
             <div className="leading-tight">
               <div className="text-[11px] uppercase tracking-widest text-white/70">Portal Interno</div>
               <div className="text-base font-semibold">Central de Rateio de Equipamentos</div>
@@ -17,7 +15,6 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
           </Link>
           <div className="hidden sm:block text-right text-xs text-white/80">
             <div>Departamento de TI</div>
-            <div className="text-white/60">Consulta de ativos · v1.0</div>
           </div>
         </div>
       </header>
