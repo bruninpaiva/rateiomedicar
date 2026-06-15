@@ -84,16 +84,6 @@ function TelaLogin({ onSucesso }: { onSucesso: () => void }) {
   );
 }
 
-const ROTULOS_CAMPO: Record<string, string> = {
-  codigo: "Código do centro",
-  centro: "Centro de custo (nome)",
-  serie: "Número de série",
-  nome: "Colaborador",
-  cidade: "Cidade",
-  valor: "Valor mensal",
-  percentual: "Percentual",
-};
-
 function PainelAdmin({ onSair }: { onSair: () => void }) {
   const { status, centros, meta, error } = useRateioData();
   const totalNotebooks = centros.reduce((s, c) => s + c.notebooks.length, 0);
@@ -170,12 +160,17 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
                 <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1.5">Mapeamento aplicado</div>
                 <table className="text-[12px] w-full sm:w-auto">
                   <tbody>
-                    {(Object.keys(ROTULOS_CAMPO) as (keyof typeof meta.mapeamento)[]).map((k) => (
-                      <tr key={k}>
-                        <td className="text-[#5b6573] pr-4 py-0.5">{ROTULOS_CAMPO[k]}</td>
-                        <td className="font-mono text-[#1f2937] py-0.5">
-                          {meta.mapeamento[k] ?? <span className="text-[#a0a8b3] italic">não mapeada</span>}
-                        </td>
+                    {[
+                      ["Centro de Custo (agrupador)", "CENTRO_CUSTO"],
+                      ["Colaborador", "NOME"],
+                      ["Número de série", "N.Série"],
+                      ["Cidade", "CIDADE"],
+                      ["Valor mensal", "VALOR_UNIT"],
+                      ["Percentual individual", "PERCENTUAL"],
+                    ].map(([rotulo, coluna]) => (
+                      <tr key={rotulo}>
+                        <td className="text-[#5b6573] pr-4 py-0.5">{rotulo}</td>
+                        <td className="font-mono text-[#1f2937] py-0.5">{coluna}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -201,7 +196,6 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
           <table className="w-full text-sm">
             <thead className="bg-[#f4f5f7] text-[11px] uppercase tracking-wider text-[#5b6573]">
               <tr>
-                <th className="text-left px-5 py-2 font-medium">Código</th>
                 <th className="text-left px-5 py-2 font-medium">Centro de custo</th>
                 <th className="text-right px-5 py-2 font-medium">Notebooks</th>
                 <th className="text-right px-5 py-2 font-medium">Valor mensal</th>
@@ -210,14 +204,13 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
             <tbody>
               {centros.map((cc) => (
                 <tr key={cc.codigo} className="border-t border-[#eef0f3]">
-                  <td className="px-5 py-2 font-mono text-xs text-[#5b6573]">{cc.codigo}</td>
                   <td className="px-5 py-2 text-[#1f2937]">{cc.nome}</td>
                   <td className="px-5 py-2 text-right tabular-nums">{cc.notebooks.length}</td>
                   <td className="px-5 py-2 text-right tabular-nums">{formatBRL(totalCC(cc))}</td>
                 </tr>
               ))}
               {centros.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-8 text-center text-[#5b6573]">
+                <tr><td colSpan={3} className="px-5 py-8 text-center text-[#5b6573]">
                   {status === "loading" ? "Carregando dados da planilha…" : "Nenhum dado disponível."}
                 </td></tr>
               )}
