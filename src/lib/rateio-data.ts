@@ -1,115 +1,125 @@
 import { useSyncExternalStore } from "react";
-import { getRateioData } from "./rateio.functions";
+import { getRateioArklokData, getRateioData } from "./rateio.functions";
+import type {
+  CentroCusto,
+  ContratoRateio,
+  Notebook,
+  RateioMeta,
+  RateioResult,
+  RateioState,
+  RateioStatus,
+} from "./rateio-types";
 
-// ---------- Tipos ----------
+export type { CentroCusto, ContratoRateio, Notebook, RateioMeta, RateioState, RateioStatus };
 
-export interface Notebook {
-  colaborador: string;
-  serie: string;
-  cidade: string;
-  valorMensal: number;
-  /** Percentual individual de rateio, em escala 0–100 (ex.: 20 = 20%). */
-  percentual: number;
-}
+type Loader = () => Promise<RateioResult>;
 
-export interface CentroCusto {
-  /** Identificador do centro (= próprio nome textual). */
-  codigo: string;
-  /** Nome do centro de custo (igual ao codigo). */
-  nome: string;
-  notebooks: Notebook[];
-}
+function createRateioStore(loader: Loader) {
+  let state: RateioState = {
+    status: "idle",
+    centros: [],
+    meta: null,
+    error: null,
+  };
+  let loadingPromise: Promise<void> | null = null;
+  const listeners = new Set<() => void>();
 
-export interface RateioMeta {
-  lastSync: string;
-  totalLinhas: number;
-  totalCentros: number;
-  totalNotebooks: number;
-  sheetName: string;
-  colunasIdentificadas: string[];
-  arquivo: string;
-}
+  function emit() {
+    listeners.forEach((listener) => listener());
+  }
 
-export type RateioStatus = "idle" | "loading" | "success" | "error";
+  function setState(next: Partial<RateioState>) {
+    state = { ...state, ...next };
+    emit();
+  }
 
-export interface RateioState {
-  status: RateioStatus;
-  centros: CentroCusto[];
-  meta: RateioMeta | null;
-  error: string | null;
-}
-
-// ---------- Store reativa (única fonte: SharePoint, aba D21882) ----------
-
-let state: RateioState = {
-  status: "idle",
-  centros: [],
-  meta: null,
-  error: null,
-};
-let loadingPromise: Promise<void> | null = null;
-
-const listeners = new Set<() => void>();
-function emit() { listeners.forEach((l) => l()); }
-function subscribe(l: () => void) {
-  listeners.add(l);
-  if (state.status === "idle") void refresh();
-  return () => listeners.delete(l);
-}
-function setState(next: Partial<RateioState>) {
-  state = { ...state, ...next };
-  emit();
-}
-
-export async function refresh(): Promise<void> {
-  if (loadingPromise) return loadingPromise;
-  setState({ status: "loading", error: null });
-  loadingPromise = (async () => {
-    try {
-      const res = await getRateioData();
-      if (res.ok) {
-        const { centros, ...meta } = res.payload;
-        setState({ status: "success", centros, meta, error: null });
-      } else {
-        setState({ status: "error", error: res.error, centros: [], meta: null });
+  async function refresh(): Promise<void> {
+    if (loadingPromise) return loadingPromise;
+    setState({ status: "loading", error: null });
+    loadingPromise = (async () => {
+      try {
+        const result = await loader();
+        if (result.ok) {
+          const { centros, ...meta } = result.payload;
+          setState({ status: "success", centros, meta, error: null });
+        } else {
+          setState({ status: "error", error: result.error, centros: [], meta: null });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setState({ status: "error", error: message, centros: [], meta: null });
+      } finally {
+        loadingPromise = null;
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setState({ status: "error", error: msg, centros: [], meta: null });
-    } finally {
-      loadingPromise = null;
-    }
-  })();
-  return loadingPromise;
+    })();
+    return loadingPromise;
+  }
+
+  function subscribe(listener: () => void) {
+    listeners.add(listener);
+    if (state.status === "idle") void refresh();
+    return () => listeners.delete(listener);
+  }
+
+  return {
+    getSnapshot: () => state,
+    subscribe,
+    refresh,
+  };
+}
+
+const stores = {
+  soffner: createRateioStore(getRateioData),
+  arklok: createRateioStore(getRateioArklokData),
+} satisfies Record<ContratoRateio, ReturnType<typeof createRateioStore>>;
+
+export function useContratoRateio(contrato: ContratoRateio): RateioState {
+  const store = stores[contrato];
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+}
+
+export function refreshContrato(contrato: ContratoRateio): Promise<void> {
+  return stores[contrato].refresh();
 }
 
 export function useRateioData(): RateioState {
-  return useSyncExternalStore(subscribe, () => state, () => state);
+  return useContratoRateio("soffner");
+}
+
+export function refresh(): Promise<void> {
+  return refreshContrato("soffner");
 }
 
 export function useCentros(): CentroCusto[] {
   return useRateioData().centros;
 }
 
-// ---------- Helpers de exibição ----------
-
 export function totalCC(cc: CentroCusto) {
-  return cc.notebooks.reduce((s, n) => s + n.valorMensal, 0);
+  return cc.notebooks.reduce((sum, notebook) => sum + notebook.valorMensal, 0);
 }
+
 export function totalGeral(centros: CentroCusto[]) {
-  return centros.reduce((s, cc) => s + totalCC(cc), 0);
+  return centros.reduce((sum, centro) => sum + totalCC(centro), 0);
 }
-export function formatBRL(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+export function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+
 export function formatDataHora(iso: string) {
   try {
     return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit", month: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
-  } catch { return iso; }
+  } catch {
+    return iso;
+  }
 }
-export function getCentro(codigo: string, centros: CentroCusto[]) {
-  return centros.find((c) => c.codigo === codigo);
+
+export function getCentro(identifier: string, centros: CentroCusto[]) {
+  return centros.find((centro) => centro.id === identifier || centro.codigo === identifier);
 }

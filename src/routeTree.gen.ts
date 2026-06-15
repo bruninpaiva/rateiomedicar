@@ -11,7 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RateioSoffnerRouteImport } from './routes/rateio.soffner'
+import { Route as RateioArklokRouteImport } from './routes/rateio.arklok'
 import { Route as CentroCodigoRouteImport } from './routes/centro.$codigo'
+import { Route as RateioContratoCentroCodigoRouteImport } from './routes/rateio.$contrato.centro.$codigo'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -23,40 +26,87 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RateioSoffnerRoute = RateioSoffnerRouteImport.update({
+  id: '/rateio/soffner',
+  path: '/rateio/soffner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RateioArklokRoute = RateioArklokRouteImport.update({
+  id: '/rateio/arklok',
+  path: '/rateio/arklok',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CentroCodigoRoute = CentroCodigoRouteImport.update({
   id: '/centro/$codigo',
   path: '/centro/$codigo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RateioContratoCentroCodigoRoute =
+  RateioContratoCentroCodigoRouteImport.update({
+    id: '/rateio/$contrato/centro/$codigo',
+    path: '/rateio/$contrato/centro/$codigo',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/centro/$codigo': typeof CentroCodigoRoute
+  '/rateio/arklok': typeof RateioArklokRoute
+  '/rateio/soffner': typeof RateioSoffnerRoute
+  '/rateio/$contrato/centro/$codigo': typeof RateioContratoCentroCodigoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/centro/$codigo': typeof CentroCodigoRoute
+  '/rateio/arklok': typeof RateioArklokRoute
+  '/rateio/soffner': typeof RateioSoffnerRoute
+  '/rateio/$contrato/centro/$codigo': typeof RateioContratoCentroCodigoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/centro/$codigo': typeof CentroCodigoRoute
+  '/rateio/arklok': typeof RateioArklokRoute
+  '/rateio/soffner': typeof RateioSoffnerRoute
+  '/rateio/$contrato/centro/$codigo': typeof RateioContratoCentroCodigoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/centro/$codigo'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/centro/$codigo'
+    | '/rateio/arklok'
+    | '/rateio/soffner'
+    | '/rateio/$contrato/centro/$codigo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/centro/$codigo'
-  id: '__root__' | '/' | '/admin' | '/centro/$codigo'
+  to:
+    | '/'
+    | '/admin'
+    | '/centro/$codigo'
+    | '/rateio/arklok'
+    | '/rateio/soffner'
+    | '/rateio/$contrato/centro/$codigo'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/centro/$codigo'
+    | '/rateio/arklok'
+    | '/rateio/soffner'
+    | '/rateio/$contrato/centro/$codigo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CentroCodigoRoute: typeof CentroCodigoRoute
+  RateioArklokRoute: typeof RateioArklokRoute
+  RateioSoffnerRoute: typeof RateioSoffnerRoute
+  RateioContratoCentroCodigoRoute: typeof RateioContratoCentroCodigoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +125,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rateio/soffner': {
+      id: '/rateio/soffner'
+      path: '/rateio/soffner'
+      fullPath: '/rateio/soffner'
+      preLoaderRoute: typeof RateioSoffnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rateio/arklok': {
+      id: '/rateio/arklok'
+      path: '/rateio/arklok'
+      fullPath: '/rateio/arklok'
+      preLoaderRoute: typeof RateioArklokRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/centro/$codigo': {
       id: '/centro/$codigo'
       path: '/centro/$codigo'
       fullPath: '/centro/$codigo'
       preLoaderRoute: typeof CentroCodigoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rateio/$contrato/centro/$codigo': {
+      id: '/rateio/$contrato/centro/$codigo'
+      path: '/rateio/$contrato/centro/$codigo'
+      fullPath: '/rateio/$contrato/centro/$codigo'
+      preLoaderRoute: typeof RateioContratoCentroCodigoRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -89,7 +160,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CentroCodigoRoute: CentroCodigoRoute,
+  RateioArklokRoute: RateioArklokRoute,
+  RateioSoffnerRoute: RateioSoffnerRoute,
+  RateioContratoCentroCodigoRoute: RateioContratoCentroCodigoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
