@@ -5,7 +5,6 @@ import {
   useRateioData,
   refresh,
   totalCC,
-  percentualCC,
   formatBRL,
   formatDataHora,
 } from "@/lib/rateio-data";
