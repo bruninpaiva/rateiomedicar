@@ -53,9 +53,6 @@ function PortalRateios() {
                 </div>
                 <h2 className="text-xl font-semibold text-[#1d3557]">{contrato.nome}</h2>
               </div>
-              <span className="rounded-sm border border-[#dfe3e8] bg-[#f4f7fa] px-2 py-1 text-[11px] text-[#5b6573]">
-                {contrato.status}
-              </span>
             </div>
 
             <div className="flex items-end justify-between gap-4 border-t border-[#eef0f3] pt-4">
