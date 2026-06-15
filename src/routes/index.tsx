@@ -23,7 +23,7 @@ const contratos = [
   },
   {
     nome: "ARKLOK",
-    descricao: "Novo contrato em preparação para integração.",
+    descricao: "Consulta de notebooks vinculados aos centros de custo.",
     destino: "/rateio/arklok" as const,
     status: "Em preparação",
   },
