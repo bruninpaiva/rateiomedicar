@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PortalLayout } from "@/components/PortalLayout";
-import { useCentros, getCentro, totalCC, percentualCC, formatBRL } from "@/lib/rateio-data";
+import { useCentros, getCentro, totalCC, formatBRL } from "@/lib/rateio-data";
 
 export const Route = createFileRoute("/centro/$codigo")({
   head: ({ params }) => ({
@@ -90,11 +90,10 @@ function Detalhes() {
         </div>
       </div>
 
-      <section className="grid grid-cols-2 sm:grid-cols-4 border border-[#dfe3e8] bg-white mb-6">
+      <section className="grid grid-cols-2 sm:grid-cols-3 border border-[#dfe3e8] bg-white mb-6">
         <Resumo label="Notebooks" valor={String(cc.notebooks.length)} />
-        <Resumo label="Valor Mensal" valor={formatBRL(totalCC(cc))} />
-        <Resumo label="% do Total" valor={`${percentualCC(cc, centros).toFixed(2)}%`} />
-        <Resumo label="Código" valor={cc.codigo} mono />
+        <Resumo label="Valor Mensal Total" valor={formatBRL(totalCC(cc))} />
+        <Resumo label="Centro de Custo" valor={cc.nome} />
       </section>
 
       <section className="bg-white border border-[#dfe3e8] rounded-sm">
@@ -166,9 +165,7 @@ function Detalhes() {
                   <td className="px-5 py-3 text-right tabular-nums">
                     {formatBRL(lista.reduce((s, n) => s + n.valorMensal, 0))}
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums">
-                    {lista.reduce((s, n) => s + n.percentual, 0).toFixed(2)}%
-                  </td>
+                  <td className="px-5 py-3 text-right tabular-nums text-[#5b6573]">—</td>
                 </tr>
               </tfoot>
             )}
