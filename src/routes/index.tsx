@@ -81,7 +81,7 @@ function Index() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <div className="text-[11px] font-mono text-[#5b6573] mb-1">{cc.codigo}</div>
+                    <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1">Centro de Custo</div>
                     <h3 className="text-[15px] font-semibold text-[#1d3557] leading-snug">
                       {cc.nome}
                     </h3>
@@ -89,18 +89,14 @@ function Index() {
                   <span className="text-[#1d3557] text-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">→</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#eef0f3]">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#eef0f3]">
                   <div>
                     <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">Notebooks</div>
                     <div className="text-lg font-semibold text-[#1f2937] tabular-nums">{cc.notebooks.length}</div>
                   </div>
                   <div>
-                    <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">Mensal</div>
+                    <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">Valor Mensal</div>
                     <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{formatBRL(totalCC(cc))}</div>
-                  </div>
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-0.5">% Total</div>
-                    <div className="text-sm font-semibold text-[#1f2937] tabular-nums">{percentualCC(cc, centros).toFixed(2)}%</div>
                   </div>
                 </div>
               </Link>

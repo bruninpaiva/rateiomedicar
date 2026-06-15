@@ -84,16 +84,6 @@ function TelaLogin({ onSucesso }: { onSucesso: () => void }) {
   );
 }
 
-const ROTULOS_CAMPO: Record<string, string> = {
-  codigo: "Código do centro",
-  centro: "Centro de custo (nome)",
-  serie: "Número de série",
-  nome: "Colaborador",
-  cidade: "Cidade",
-  valor: "Valor mensal",
-  percentual: "Percentual",
-};
-
 function PainelAdmin({ onSair }: { onSair: () => void }) {
   const { status, centros, meta, error } = useRateioData();
   const totalNotebooks = centros.reduce((s, c) => s + c.notebooks.length, 0);
