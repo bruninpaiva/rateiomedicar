@@ -196,7 +196,6 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
           <table className="w-full text-sm">
             <thead className="bg-[#f4f5f7] text-[11px] uppercase tracking-wider text-[#5b6573]">
               <tr>
-                <th className="text-left px-5 py-2 font-medium">Código</th>
                 <th className="text-left px-5 py-2 font-medium">Centro de custo</th>
                 <th className="text-right px-5 py-2 font-medium">Notebooks</th>
                 <th className="text-right px-5 py-2 font-medium">Valor mensal</th>
@@ -205,14 +204,13 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
             <tbody>
               {centros.map((cc) => (
                 <tr key={cc.codigo} className="border-t border-[#eef0f3]">
-                  <td className="px-5 py-2 font-mono text-xs text-[#5b6573]">{cc.codigo}</td>
                   <td className="px-5 py-2 text-[#1f2937]">{cc.nome}</td>
                   <td className="px-5 py-2 text-right tabular-nums">{cc.notebooks.length}</td>
                   <td className="px-5 py-2 text-right tabular-nums">{formatBRL(totalCC(cc))}</td>
                 </tr>
               ))}
               {centros.length === 0 && (
-                <tr><td colSpan={4} className="px-5 py-8 text-center text-[#5b6573]">
+                <tr><td colSpan={3} className="px-5 py-8 text-center text-[#5b6573]">
                   {status === "loading" ? "Carregando dados da planilha…" : "Nenhum dado disponível."}
                 </td></tr>
               )}
