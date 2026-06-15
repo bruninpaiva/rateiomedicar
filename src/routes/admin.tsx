@@ -160,12 +160,17 @@ function PainelAdmin({ onSair }: { onSair: () => void }) {
                 <div className="text-[11px] uppercase tracking-wider text-[#5b6573] mb-1.5">Mapeamento aplicado</div>
                 <table className="text-[12px] w-full sm:w-auto">
                   <tbody>
-                    {(Object.keys(ROTULOS_CAMPO) as (keyof typeof meta.mapeamento)[]).map((k) => (
-                      <tr key={k}>
-                        <td className="text-[#5b6573] pr-4 py-0.5">{ROTULOS_CAMPO[k]}</td>
-                        <td className="font-mono text-[#1f2937] py-0.5">
-                          {meta.mapeamento[k] ?? <span className="text-[#a0a8b3] italic">não mapeada</span>}
-                        </td>
+                    {[
+                      ["Centro de Custo (agrupador)", "CENTRO_CUSTO"],
+                      ["Colaborador", "NOME"],
+                      ["Número de série", "N.Série"],
+                      ["Cidade", "CIDADE"],
+                      ["Valor mensal", "VALOR_UNIT"],
+                      ["Percentual individual", "PERCENTUAL"],
+                    ].map(([rotulo, coluna]) => (
+                      <tr key={rotulo}>
+                        <td className="text-[#5b6573] pr-4 py-0.5">{rotulo}</td>
+                        <td className="font-mono text-[#1f2937] py-0.5">{coluna}</td>
                       </tr>
                     ))}
                   </tbody>
