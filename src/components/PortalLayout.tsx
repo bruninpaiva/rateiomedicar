@@ -9,16 +9,55 @@ import {
   ChevronRight,
   HelpCircle
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export function PortalLayout({ children, breadcrumb }: { children: ReactNode; breadcrumb?: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  
   const routerState = useRouterState({
     select: (state) => state.location.pathname,
   });
   const pathname = routerState ?? "/";
+
+  // Handle initial screen size and responsiveness
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+    };
+
+    // Initial check
+    const initialMobile = window.innerWidth < 1024;
+    setIsMobile(initialMobile);
+    if (initialMobile) {
+      setIsSidebarOpen(false);
+    }
+
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
+      setIsSidebarOpen(false);
+    }
+  }, [pathname, isMobile]);
+
+  // Handle ESC key to close sidebar
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isMobile) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isMobile]);
 
   const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
@@ -32,18 +71,33 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] font-sans flex overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] font-sans flex overflow-hidden relative">
+      {/* Overlay for mobile */}
+      {isMobile && isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity duration-300 animate-in fade-in"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside 
         className={cn(
           "bg-[#0F172A] text-white transition-all duration-300 ease-in-out flex flex-col z-50 shadow-xl",
-          isSidebarOpen ? "w-64" : "w-20"
+          "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
+          isSidebarOpen 
+            ? "translate-x-0 w-64" 
+            : "-translate-x-full lg:w-20 lg:translate-x-0"
         )}
       >
         <div className="p-4 flex items-center justify-between border-b border-white/5 h-16">
-          <Link to="/" className="flex items-center gap-3 overflow-hidden">
+          <Link 
+            to="/" 
+            className="flex items-center gap-3 overflow-hidden"
+            onClick={() => isMobile && setIsSidebarOpen(false)}
+          >
             <div className="min-w-[40px] flex items-center justify-center">
-              <img src="/logo-medicar1.png" alt="Medicar" className="h-8 w-auto brightness-0 invert" />
+              <img src="/logo-medicar.png" alt="Medicar" className="h-8 w-auto object-contain" />
             </div>
             {isSidebarOpen && (
               <span className="font-bold text-lg tracking-tight whitespace-nowrap">Rateios</span>
@@ -58,6 +112,7 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
               <Link
                 key={item.label}
                 to={item.href}
+                onClick={() => isMobile && setIsSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative",
                   isActive 
@@ -67,7 +122,7 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
               >
                 <item.icon className={cn("h-5 w-5 shrink-0 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-white")} />
                 {isSidebarOpen && <span className="text-sm">{item.label}</span>}
-                {!isSidebarOpen && (
+                {!isSidebarOpen && !isMobile && (
                   <div className="absolute left-16 bg-slate-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[60]">
                     {item.label}
                   </div>
@@ -87,6 +142,7 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
               <Link
                 key={item.label}
                 to={item.href}
+                onClick={() => isMobile && setIsSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative",
                   isActive 
@@ -104,7 +160,7 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
         <div className="p-4 border-t border-white/5 bg-black/10">
           <div className={cn("flex items-center gap-3", !isSidebarOpen && "justify-center")}>
             <div className="h-9 w-auto shrink-0 flex items-center justify-center">
-              <img src="/logo-medicar.png" alt="Medicar" className="h-8 w-auto brightness-0 invert opacity-80" />
+              <img src="/logo-medicar.png" alt="Medicar" className="h-8 w-auto object-contain opacity-80" />
             </div>
             {isSidebarOpen && (
               <div className="overflow-hidden">
