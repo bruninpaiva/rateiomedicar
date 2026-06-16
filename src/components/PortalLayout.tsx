@@ -103,8 +103,8 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
 
         <div className="p-4 border-t border-white/5 bg-black/10">
           <div className={cn("flex items-center gap-3", !isSidebarOpen && "justify-center")}>
-            <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0 border border-white/5">
-              TI
+            <div className="h-9 w-auto shrink-0 flex items-center justify-center">
+              <img src="/logo-medicar.png" alt="Medicar" className="h-8 w-auto brightness-0 invert opacity-80" />
             </div>
             {isSidebarOpen && (
               <div className="overflow-hidden">
@@ -139,13 +139,13 @@ export function PortalLayout({ children, breadcrumb }: { children: ReactNode; br
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50">
               <Bell className="h-5 w-5" />
             </Button>
-            <div className="h-8 w-px bg-slate-100 mx-2" />
-            <div className="h-8 w-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">
-              TI
+            <div className="h-8 w-px bg-slate-100" />
+            <div className="flex items-center">
+              <img src="/logo-medicar.png" alt="Medicar" className="h-9 w-auto object-contain" />
             </div>
           </div>
         </header>
